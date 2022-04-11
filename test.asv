@@ -1,0 +1,36 @@
+%Ten przykład pokazuje jak użyć klasę regulatora PID
+%Regulator PID jest realizowany równolegle jako człony
+% Proporcja: K
+% Całka: 1/Ti s
+% Różniczka: Kd - Kd/(Td * s + 1) - po skoku err sterowanie ustawiane jest na wartość Kd i zmniejszane po LAGu
+clear all;
+
+%classPID(K, Ti, Kd, Td, Tp, Hlim, Llim, Dir, AutoMan, ManVal) 
+%DIR: 1 - direct (SP-PV), 0 - indirect (PV-SP)
+% AutoMan = 0 regulator na wyjściu podaje wartość sterowania ręcznego ManVal
+% AutoMan = 1 regulator na wyjściu podaje wartość wyliczoną z prawa regulacji
+%Przyklad: deklaracja regulatora D
+p=classPID(0.06, 150, 0, 1, 1, 100, -100, 1, 1, 0)
+lag = classLAG(1)
+lag.Prev_LAG = 0;
+%PID
+%reTune(obj, K, Ti, Kd, Td)
+% funkcja umożliwia zmianę nastaw regulatora
+%p.reTune(1, 30, 0.5, 30)
+sim_time = 7500;
+stpt = 20;
+pv=0;
+u=zeros(sim_time + 21, 1);
+out = zeros(sim_time, 1);
+najm_kw = 0;
+for i=1:1:sim_time
+  %metoda wyliczająca prawo PID w oparciu o PV i STPT
+  u(i+21) = p.calc(pv,stpt);
+  pv = 0.37 * lag.calc(120, u(i));
+  out(i) = pv;
+  najm_kw = najm_kw + stpt - p
+  %tutaj należy symulować obiekt
+  %wyliczenie wyjscia obiektu na nastepny krok wykorzystujac u
+end
+
+plot(out);
